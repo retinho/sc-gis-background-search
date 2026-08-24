@@ -80,7 +80,7 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
         </SettingRow>
 
         {services.map((service, index) => (
-          <div key={service.id || index} className="border rounded p-3 mb-3">
+          <div key={index} className="border rounded p-3 mb-3">
             <Row className="align-items-center justify-content-between mb-3">
               <strong>{service.name || `${translate('defaultServiceName')} ${index + 1}`}</strong>
               <calcite-button
