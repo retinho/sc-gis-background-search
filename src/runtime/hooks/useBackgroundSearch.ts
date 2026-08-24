@@ -1,6 +1,6 @@
 import Graphic from 'esri/Graphic';
+import FeatureLayer from 'esri/layers/FeatureLayer';
 import GraphicsLayer from 'esri/layers/GraphicsLayer';
-import * as query from 'esri/rest/query';
 import SimpleFillSymbol from 'esri/symbols/SimpleFillSymbol';
 import SimpleLineSymbol from 'esri/symbols/SimpleLineSymbol';
 import SimpleMarkerSymbol from 'esri/symbols/SimpleMarkerSymbol';
@@ -69,8 +69,13 @@ export function useBackgroundSearch(
       setState({ status: 'loading' });
 
       try {
-        const featureSet = await query.executeQueryJSON(
-          request.service.layerUrl,
+        const searchLayer = new FeatureLayer({
+          url: request.service.layerUrl,
+          outFields: ['*'],
+          popupEnabled: true
+        });
+        await searchLayer.load({ signal: abortController.signal });
+        const featureSet = await searchLayer.queryFeatures(
           {
             where: request.where,
             outFields: ['*'],
@@ -84,7 +89,8 @@ export function useBackgroundSearch(
           return;
         }
 
-        const geometry = featureSet.features[0]?.geometry;
+        const resultFeature = featureSet.features[0];
+        const geometry = resultFeature?.geometry;
         if (!geometry) {
           highlightLayer.removeAll();
           setState({ status: 'empty' });
@@ -112,6 +118,10 @@ export function useBackgroundSearch(
           // A user interaction can interrupt the animation without invalidating the search result.
         }
 
+        if (!isCancelled && resultFeature) {
+          openServicePopup(view, resultFeature, searchLayer);
+        }
+
         if (!isCancelled) {
           setState({ status: 'success' });
         }
@@ -132,6 +142,16 @@ export function useBackgroundSearch(
   }, [config, mapView, widgetId]);
 
   return state;
+}
+
+function openServicePopup(
+  view: JimuMapView['view'],
+  feature: Graphic,
+  serviceLayer: FeatureLayer
+): void {
+  const popupFeature = feature.clone();
+  popupFeature.popupTemplate = serviceLayer.popupTemplate ?? serviceLayer.createPopupTemplate();
+  view.openPopup({ features: [popupFeature] });
 }
 
 function getHighlightLayer(
