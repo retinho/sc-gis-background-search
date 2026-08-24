@@ -18,6 +18,7 @@ export type IMConfig = ImmutableObject<IConfig>;
 export const DEFAULT_ZOOM_LEVEL = 1000;
 export const DEFAULT_HIGHLIGHT_COLOR = '#00FFFF';
 export const MAX_SERVICES = 5;
+export const MAX_SEARCH_VALUE_LENGTH = 256;
 
 export interface ISearchParameters {
   serviceId: string;
@@ -52,14 +53,19 @@ export function createSearchRequest(
 ): ISearchRequest | null {
   const service = services?.find(({ id }) => id === parameters.serviceId);
 
-  if (!service || !isValidServiceConfig(service) || !SERVICE_ID_PATTERN.test(parameters.serviceId)) {
+  if (
+    !service ||
+    !isValidServiceConfig(service) ||
+    !SERVICE_ID_PATTERN.test(parameters.serviceId) ||
+    !isValidSearchValue(parameters.searchValue)
+  ) {
     return null;
   }
 
   const fields = getSearchFields(service.searchFields);
-  const escapedSearchValue = parameters.searchValue.replace(/'/g, "''");
+  const escapedSearchValue = escapeSqlLikeValue(parameters.searchValue);
   const where = fields
-    .map((field) => `UPPER(${field}) LIKE UPPER('%${escapedSearchValue}%')`)
+    .map((field) => `UPPER(${field}) LIKE UPPER('%${escapedSearchValue}%') ESCAPE '\\'`)
     .join(' OR ');
 
   return { service, where };
@@ -68,9 +74,13 @@ export function createSearchRequest(
 export function isValidServiceConfig(service: IServiceConfig): boolean {
   return (
     SERVICE_ID_PATTERN.test(service.id) &&
-    isHttpUrl(service.layerUrl) &&
+    isHttpsServiceLayerUrl(service.layerUrl) &&
     getSearchFields(service.searchFields).length > 0
   );
+}
+
+export function isValidSearchValue(value: string): boolean {
+  return value.length <= MAX_SEARCH_VALUE_LENGTH;
 }
 
 export function getSearchFields(searchFields: string): string[] {
@@ -90,10 +100,18 @@ export function getZoomLevel(value: number | undefined): number {
   return value && Number.isFinite(value) && value > 0 ? Math.round(value) : DEFAULT_ZOOM_LEVEL;
 }
 
-function isHttpUrl(value: string): boolean {
+function escapeSqlLikeValue(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "''")
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_');
+}
+
+function isHttpsServiceLayerUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return (url.protocol === 'https:' || url.protocol === 'http:') && LAYER_PATH_PATTERN.test(url.pathname);
+    return url.protocol === 'https:' && LAYER_PATH_PATTERN.test(url.pathname);
   } catch {
     return false;
   }

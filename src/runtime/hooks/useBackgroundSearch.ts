@@ -12,10 +12,18 @@ import {
   getHighlightColor,
   getUrlSearchParameters,
   getZoomLevel,
-  IMConfig
+  IMConfig,
+  isValidSearchValue
 } from '../../config';
 
-export type TSearchStatus = 'idle' | 'loading' | 'success' | 'empty' | 'invalid-config' | 'error';
+export type TSearchStatus =
+  | 'idle'
+  | 'loading'
+  | 'success'
+  | 'empty'
+  | 'invalid-config'
+  | 'invalid-search'
+  | 'error';
 
 export interface ISearchState {
   status: TSearchStatus;
@@ -54,6 +62,12 @@ export function useBackgroundSearch(
       return;
     }
 
+    if (!isValidSearchValue(parameters.searchValue)) {
+      highlightLayerRef.current?.removeAll();
+      setState({ status: 'invalid-search' });
+      return;
+    }
+
     const request = createSearchRequest(config.services, parameters);
     if (!request) {
       highlightLayerRef.current?.removeAll();
@@ -79,6 +93,7 @@ export function useBackgroundSearch(
           {
             where: request.where,
             outFields: ['*'],
+            num: 1,
             returnGeometry: true,
             outSpatialReference: view.spatialReference
           },

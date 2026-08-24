@@ -60,6 +60,8 @@ function getMessageId(
       return 'empty';
     case 'invalid-config':
       return 'invalidConfig';
+    case 'invalid-search':
+      return 'invalidSearch';
     case 'error':
       return 'error';
     default:

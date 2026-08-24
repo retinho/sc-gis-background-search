@@ -27,6 +27,9 @@ Diese Checkliste wird in der Abnahme-Umgebung mit ArcGIS Experience Builder Deve
 | Fehlende Kartenbindung | Widget ohne Karte | Freundliche Meldung „Bitte Karte wählen“. |
 | Ungültige Konfiguration | Fehlende URL, Feld oder URL-ID | Lokalisierte Konfigurationsmeldung; keine Anfrage wird ausgeführt. |
 | Sonderzeichen | Suchwert mit Apostroph, z. B. `O'Connor` | Suche bleibt stabil; keine fehlerhafte SQL-Abfrage. |
+| LIKE-Sonderzeichen | Suchwert mit `%`, `_` oder `\` | Zeichen werden als Text gesucht; die Abfrage liefert nicht ungewollt alle Objekte. |
+| Suchwert-Limit | Suchwert mit mehr als 256 Zeichen | Lokalisierte Meldung; keine Service-Abfrage wird ausgeführt. |
+| HTTPS-Erzwingung | Konfiguration mit `http://`-Layer-URL | Lokalisierte Konfigurationsmeldung; keine Service-Abfrage wird ausgeführt. |
 | Polygon, Linie, Punkt | Je ein Treffer pro Geometrietyp | Passendes Highlight-Symbol und Zoom. |
 | MN95 | Karte in EPSG:2056 | Resultat und Zoom liegen korrekt auf dem Objekt. |
 | Mehrere Widgets | Zwei Instanzen derselben Karte | Jede Instanz verwaltet nur ihr eigenes Highlight. |

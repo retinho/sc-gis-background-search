@@ -20,6 +20,7 @@ System.register([], function (_export) {
         loading: 'Resultat wird gesucht…',
         empty: 'Kein passendes Resultat gefunden.',
         invalidConfig: 'Die Konfiguration des Suchdienstes ist unvollständig oder ungültig.',
+        invalidSearch: 'Der Suchwert ist ungültig oder zu lang.',
         error: 'Die Suche konnte nicht abgeschlossen werden.'
       });
     }

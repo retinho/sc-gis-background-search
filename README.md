@@ -23,7 +23,7 @@ Pro Dienst werden die folgenden Werte konfiguriert:
 | --- | --- | --- |
 | URL-ID | Eindeutiger Name fuer den URL-Parameter | `parzelle` |
 | Anzeigename | Bezeichnung im Builder | `Amtliche Vermessung` |
-| Layer-URL | Vollstaendige URL des Feature-/Map-Service-Layers | `https://example.org/arcgis/rest/services/AV/MapServer/0` |
+| Layer-URL | Vollstaendige HTTPS-URL des Feature-/Map-Service-Layers | `https://example.org/arcgis/rest/services/AV/MapServer/0` |
 | Suchfelder | Durch Kommas getrennte Feldnamen | `EGRID,NUMMER` |
 | Ziel-Massstab | Kartenmassstab nach dem Treffer | `1000` |
 | Highlight-Farbe | Hex-Farbe des Ergebnisses | `#00FFFF` |
@@ -37,6 +37,7 @@ https://portal.example.org/experience/?sc_search_id=parzelle&sc_search_val=CH123
 ```
 
 `sc_search_id` muss einer konfigurierten URL-ID entsprechen. `sc_search_val` ist der Suchwert.
+Suchwerte sind auf 256 Zeichen begrenzt; die Zeichen `%` und `_` werden als Text und nicht als Platzhalter behandelt.
 
 ## Entwicklung und Release
 

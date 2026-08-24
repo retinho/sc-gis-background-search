@@ -17,6 +17,7 @@ const messages = {
   loading: 'Searching for a result…',
   empty: 'No matching result found.',
   invalidConfig: 'The search service configuration is incomplete or invalid.',
+  invalidSearch: 'The search value is invalid or too long.',
   error: 'The search could not be completed.'
 } as const;
 
