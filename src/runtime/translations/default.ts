@@ -4,6 +4,7 @@ const messages = {
   serviceConfigTitle: 'Map Services (Max. 5)',
   displaySectionTitle: 'Zoom and highlight',
   addService: 'Add Service',
+  removeService: 'Remove service',
   serviceId: 'URL ID (e.g. parcel)',
   serviceName: 'Display Name',
   layerUrl: 'Layer URL (.../MapServer/0)',

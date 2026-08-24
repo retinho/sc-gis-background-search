@@ -1,7 +1,7 @@
 import { React } from 'jimu-core';
 import { AllWidgetSettingProps } from 'jimu-for-builder';
 import { MapWidgetSelector, SettingSection, SettingRow } from 'jimu-ui/advanced/setting-components';
-import { TextInput, Button, NumericInput, Alert } from 'jimu-ui';
+import { Column, Row } from 'jimu-ui';
 import {
   DEFAULT_HIGHLIGHT_COLOR,
   DEFAULT_ZOOM_LEVEL,
@@ -11,16 +11,16 @@ import {
   MAX_SERVICES
 } from '../config';
 import defaultMessages, { TMessageId } from '../runtime/translations/default';
-import { PlusOutlined } from 'jimu-icons/outlined/editor/plus';
-import { TrashOutlined } from 'jimu-icons/outlined/editor/trash';
+
+interface ICalciteInputElement extends HTMLElement {
+  value: string;
+}
 
 export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.ReactElement {
   const { onSettingChange, id, useMapWidgetIds, config, intl } = props;
-
+  const services = Array.from(config.services ?? []);
   const translate = (key: TMessageId): string =>
     intl.formatMessage({ id: key, defaultMessage: defaultMessages[key] });
-
-  const services = Array.from(config.services ?? []);
 
   const updateConfig = <TKey extends keyof IConfig>(key: TKey, value: IConfig[TKey]): void => {
     onSettingChange({ id, config: config.set(key, value) });
@@ -28,28 +28,26 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
 
   const addService = (): void => {
     if (services.length >= MAX_SERVICES) return;
-    const newService: IServiceConfig = {
+
+    updateConfig('services', services.concat({
       id: `svc_${Date.now()}`,
       name: translate('defaultServiceName'),
       layerUrl: '',
       searchFields: ''
-    };
-    updateConfig('services', services.concat([newService]));
+    }));
   };
 
   const removeService = (index: number): void => {
     updateConfig('services', services.filter((_, serviceIndex) => serviceIndex !== index));
   };
 
-  const updateServiceDetail = (
-    index: number,
-    field: keyof IServiceConfig,
-    value: string
-  ): void => {
-    const updated = services.map((service, serviceIndex) =>
-      serviceIndex === index ? { ...service, [field]: value } : service
+  const updateService = (index: number, field: keyof IServiceConfig, value: string): void => {
+    updateConfig(
+      'services',
+      services.map((service, serviceIndex) =>
+        serviceIndex === index ? { ...service, [field]: value } : service
+      )
     );
-    updateConfig('services', updated);
   };
 
   return (
@@ -65,70 +63,89 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
 
       <SettingSection title={translate('serviceConfigTitle')}>
         {services.length >= MAX_SERVICES && (
-          <Alert form="basic" type="warning" className="mb-2">
-            {translate('maxServicesReached')}
-          </Alert>
+          <calcite-notice open icon kind="warning" className="mb-2">
+            <div slot="message">{translate('maxServicesReached')}</div>
+          </calcite-notice>
         )}
         <SettingRow>
-          <Button type="primary" onClick={addService} disabled={services.length >= MAX_SERVICES} className="w-100">
-            <PlusOutlined className="mr-2" /> {translate('addService')}
-          </Button>
+          <calcite-button
+            appearance="outline"
+            width="full"
+            disabled={services.length >= MAX_SERVICES}
+            icon-start="plus"
+            onClick={addService}
+          >
+            {translate('addService')}
+          </calcite-button>
         </SettingRow>
 
-        {services.map((svc, index) => (
-          <div key={svc.id || index} className="p-2 mb-3 border rounded bg-light">
-            <div className="d-flex justify-content-between align-items-center mb-2">
-              <strong>{svc.name || `${translate('defaultServiceName')} ${index + 1}`}</strong>
-              <Button icon size="sm" type="danger" onClick={() => removeService(index)}>
-                <TrashOutlined />
-              </Button>
-            </div>
-            <TextInput 
-              placeholder={translate('serviceId')} 
-              value={svc.id} 
-              onChange={e => updateServiceDetail(index, 'id', e.target.value)} 
-              className="mb-2 w-100" size="sm" 
-            />
-            <TextInput 
-              placeholder={translate('serviceName')} 
-              value={svc.name} 
-              onChange={e => updateServiceDetail(index, 'name', e.target.value)} 
-              className="mb-2 w-100" size="sm" 
-            />
-            <TextInput 
-              placeholder={translate('layerUrl')} 
-              value={svc.layerUrl} 
-              onChange={e => updateServiceDetail(index, 'layerUrl', e.target.value)} 
-              className="mb-2 w-100" size="sm" 
-            />
-            <TextInput 
-              placeholder={translate('searchFields')} 
-              value={svc.searchFields} 
-              onChange={e => updateServiceDetail(index, 'searchFields', e.target.value)} 
-              className="w-100" size="sm" 
-            />
+        {services.map((service, index) => (
+          <div key={service.id || index} className="border rounded p-3 mb-3">
+            <Row className="align-items-center justify-content-between mb-3">
+              <strong>{service.name || `${translate('defaultServiceName')} ${index + 1}`}</strong>
+              <calcite-button
+                appearance="transparent"
+                kind="danger"
+                label={translate('removeService')}
+                icon-start="trash"
+                onClick={() => removeService(index)}
+              />
+            </Row>
+            <Column>
+              <calcite-label className="mb-2">
+                {translate('serviceId')}
+                <calcite-input value={service.id} onInput={(event) => updateService(index, 'id', getInputValue(event))} />
+              </calcite-label>
+              <calcite-label className="mb-2">
+                {translate('serviceName')}
+                <calcite-input value={service.name} onInput={(event) => updateService(index, 'name', getInputValue(event))} />
+              </calcite-label>
+              <calcite-label className="mb-2">
+                {translate('layerUrl')}
+                <calcite-input type="url" value={service.layerUrl} onInput={(event) => updateService(index, 'layerUrl', getInputValue(event))} />
+              </calcite-label>
+              <calcite-label>
+                {translate('searchFields')}
+                <calcite-input value={service.searchFields} onInput={(event) => updateService(index, 'searchFields', getInputValue(event))} />
+              </calcite-label>
+            </Column>
           </div>
         ))}
       </SettingSection>
 
       <SettingSection title={translate('displaySectionTitle')}>
-        <SettingRow label={translate('zoomLevel')}>
-          <NumericInput
-            size="sm"
-            value={config.zoomLevel ?? DEFAULT_ZOOM_LEVEL}
-            onChange={val => updateConfig('zoomLevel', val)}
-            className="w-50"
-          />
-        </SettingRow>
-        <SettingRow label={translate('highlightColor')}>
-          <TextInput 
-            size="sm"
-            value={config.highlightColor ?? DEFAULT_HIGHLIGHT_COLOR}
-            onChange={e => updateConfig('highlightColor', e.target.value)}
-            className="w-50"
-          />
+        <SettingRow>
+          <Column className="w-100">
+            <calcite-label className="mb-3">
+              {translate('zoomLevel')}
+              <calcite-input
+                type="number"
+                min="1"
+                step="1"
+                value={String(config.zoomLevel ?? DEFAULT_ZOOM_LEVEL)}
+                onInput={(event) => updateConfig('zoomLevel', getZoomLevel(event))}
+              />
+            </calcite-label>
+            <calcite-label>
+              {translate('highlightColor')}
+              <calcite-input
+                type="color"
+                value={config.highlightColor ?? DEFAULT_HIGHLIGHT_COLOR}
+                onInput={(event) => updateConfig('highlightColor', getInputValue(event))}
+              />
+            </calcite-label>
+          </Column>
         </SettingRow>
       </SettingSection>
     </div>
   );
+}
+
+function getInputValue(event: React.FormEvent<HTMLElement>): string {
+  return (event.currentTarget as ICalciteInputElement).value;
+}
+
+function getZoomLevel(event: React.FormEvent<HTMLElement>): number {
+  const value = Number(getInputValue(event));
+  return Number.isFinite(value) && value > 0 ? Math.round(value) : DEFAULT_ZOOM_LEVEL;
 }

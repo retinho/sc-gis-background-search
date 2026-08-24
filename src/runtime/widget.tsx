@@ -18,12 +18,30 @@ export default function BackgroundSearch(props: AllWidgetProps<IMConfig>): React
       {useMapWidgetIds?.[0] && (
         <JimuMapViewComponent useMapWidgetId={useMapWidgetIds[0]} onActiveViewChange={setMapView} />
       )}
-      {message && (
-        <div className="sr-only" role="status" aria-live="polite">
-          {message}
-        </div>
-      )}
+      {message && <SearchStatus message={message} messageId={messageId} />}
     </div>
+  );
+}
+
+interface ISearchStatusProps {
+  message: string;
+  messageId: TMessageId;
+}
+
+function SearchStatus({ message, messageId }: ISearchStatusProps): React.ReactElement {
+  if (messageId === 'loading') {
+    return (
+      <div className="p-2 d-flex align-items-center" role="status" aria-live="polite">
+        <calcite-loader active inline scale="s" label={message} className="mr-2" />
+        <span>{message}</span>
+      </div>
+    );
+  }
+
+  return (
+    <calcite-notice open icon kind={messageId === 'error' ? 'danger' : 'warning'} className="m-2">
+      <div slot="message">{message}</div>
+    </calcite-notice>
   );
 }
 

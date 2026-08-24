@@ -7,6 +7,7 @@ System.register([], function (_export) {
         serviceConfigTitle: 'Services de carte (Max. 5)',
         displaySectionTitle: 'Zoom et mise en évidence',
         addService: 'Ajouter un service',
+        removeService: 'Supprimer le service',
         serviceId: 'ID URL (ex. parcelle)',
         serviceName: 'Nom d\'affichage',
         layerUrl: 'URL de la couche (.../MapServer/0)',
