@@ -10,7 +10,7 @@ Ein Custom Widget fuer ArcGIS Experience Builder Developer Edition 1.17. Das Wid
 
 ## Installation im Experience Builder
 
-1. Den Ordner `dev/sc-gis-background-search` in den `client/your-extensions/widgets`-Ordner der Experience Builder Developer Edition kopieren.
+1. Den Repository-Stammordner `sc-gis-background-search` in den `client/your-extensions/widgets`-Ordner der Experience Builder Developer Edition kopieren.
 2. Experience Builder neu starten oder das Widget-Verzeichnis neu einlesen lassen.
 3. Das Widget in einer Experience hinzufuegen und im Setting eine Karte auswaehlen.
 4. Mindestens einen Kartendienst konfigurieren.
