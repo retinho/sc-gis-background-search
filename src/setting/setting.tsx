@@ -94,19 +94,36 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
             <Col>
               <calcite-label className="mb-2">
                 {translate('serviceId')}
-                <calcite-input value={service.id} onInput={(event) => updateService(index, 'id', getInputValue(event))} />
+                <calcite-input
+                  value={service.id}
+                  onInput={(event) => updateService(index, 'id', getInputValue(event))}
+                  onKeyDown={stopBuilderKeyboardShortcut}
+                />
               </calcite-label>
               <calcite-label className="mb-2">
                 {translate('serviceName')}
-                <calcite-input value={service.name} onInput={(event) => updateService(index, 'name', getInputValue(event))} />
+                <calcite-input
+                  value={service.name}
+                  onInput={(event) => updateService(index, 'name', getInputValue(event))}
+                  onKeyDown={stopBuilderKeyboardShortcut}
+                />
               </calcite-label>
               <calcite-label className="mb-2">
                 {translate('layerUrl')}
-                <calcite-input type="url" value={service.layerUrl} onInput={(event) => updateService(index, 'layerUrl', getInputValue(event))} />
+                <calcite-input
+                  type="url"
+                  value={service.layerUrl}
+                  onInput={(event) => updateService(index, 'layerUrl', getInputValue(event))}
+                  onKeyDown={stopBuilderKeyboardShortcut}
+                />
               </calcite-label>
               <calcite-label>
                 {translate('searchFields')}
-                <calcite-input value={service.searchFields} onInput={(event) => updateService(index, 'searchFields', getInputValue(event))} />
+                <calcite-input
+                  value={service.searchFields}
+                  onInput={(event) => updateService(index, 'searchFields', getInputValue(event))}
+                  onKeyDown={stopBuilderKeyboardShortcut}
+                />
               </calcite-label>
             </Col>
           </div>
@@ -124,6 +141,7 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
                 step="1"
                 value={String(config.zoomLevel ?? DEFAULT_ZOOM_LEVEL)}
                 onInput={(event) => updateConfig('zoomLevel', getZoomLevel(event))}
+                onKeyDown={stopBuilderKeyboardShortcut}
               />
             </calcite-label>
             <calcite-label>
@@ -132,6 +150,7 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
                 type="color"
                 value={config.highlightColor ?? DEFAULT_HIGHLIGHT_COLOR}
                 onInput={(event) => updateConfig('highlightColor', getInputValue(event))}
+                onKeyDown={stopBuilderKeyboardShortcut}
               />
             </calcite-label>
           </Col>
@@ -148,4 +167,8 @@ function getInputValue(event: React.FormEvent<HTMLElement>): string {
 function getZoomLevel(event: React.FormEvent<HTMLElement>): number {
   const value = Number(getInputValue(event));
   return Number.isFinite(value) && value > 0 ? Math.round(value) : DEFAULT_ZOOM_LEVEL;
+}
+
+function stopBuilderKeyboardShortcut(event: React.KeyboardEvent<HTMLElement>): void {
+  event.stopPropagation();
 }
