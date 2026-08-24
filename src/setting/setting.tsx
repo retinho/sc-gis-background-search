@@ -1,7 +1,7 @@
 import { React } from 'jimu-core';
 import { AllWidgetSettingProps } from 'jimu-for-builder';
 import { MapWidgetSelector, SettingSection, SettingRow } from 'jimu-ui/advanced/setting-components';
-import { Column, Row } from 'jimu-ui';
+import { Col, Row } from 'jimu-ui';
 import {
   DEFAULT_HIGHLIGHT_COLOR,
   DEFAULT_ZOOM_LEVEL,
@@ -91,7 +91,7 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
                 onClick={() => removeService(index)}
               />
             </Row>
-            <Column>
+            <Col>
               <calcite-label className="mb-2">
                 {translate('serviceId')}
                 <calcite-input value={service.id} onInput={(event) => updateService(index, 'id', getInputValue(event))} />
@@ -108,14 +108,14 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
                 {translate('searchFields')}
                 <calcite-input value={service.searchFields} onInput={(event) => updateService(index, 'searchFields', getInputValue(event))} />
               </calcite-label>
-            </Column>
+            </Col>
           </div>
         ))}
       </SettingSection>
 
       <SettingSection title={translate('displaySectionTitle')}>
         <SettingRow>
-          <Column className="w-100">
+          <Col className="w-100">
             <calcite-label className="mb-3">
               {translate('zoomLevel')}
               <calcite-input
@@ -134,7 +134,7 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
                 onInput={(event) => updateConfig('highlightColor', getInputValue(event))}
               />
             </calcite-label>
-          </Column>
+          </Col>
         </SettingRow>
       </SettingSection>
     </div>
