@@ -21,24 +21,20 @@ export interface ISearchState {
   status: TSearchStatus;
 }
 
-const HIGHLIGHT_LAYER_ID = 'sc-gis-background-search-highlight';
+const HIGHLIGHT_LAYER_ID_PREFIX = 'sc-gis-background-search-highlight';
 
-export function useBackgroundSearch(mapView: JimuMapView | null, config: IMConfig): ISearchState {
+export function useBackgroundSearch(
+  mapView: JimuMapView | null,
+  config: IMConfig,
+  widgetId: string
+): ISearchState {
   const [state, setState] = React.useState<ISearchState>({ status: 'idle' });
   const highlightLayerRef = React.useRef<GraphicsLayer | null>(null);
   const attachedMapViewRef = React.useRef<JimuMapView | null>(null);
 
   React.useEffect(() => {
     return () => {
-      const highlightLayer = highlightLayerRef.current;
-      const attachedMapView = attachedMapViewRef.current;
-
-      if (highlightLayer && attachedMapView?.view?.map) {
-        attachedMapView.view.map.remove(highlightLayer);
-      }
-
-      highlightLayerRef.current = null;
-      attachedMapViewRef.current = null;
+      detachHighlightLayer(highlightLayerRef, attachedMapViewRef);
     };
   }, []);
 
@@ -46,6 +42,8 @@ export function useBackgroundSearch(mapView: JimuMapView | null, config: IMConfi
     const view = mapView?.view;
 
     if (!view || typeof window === 'undefined') {
+      detachHighlightLayer(highlightLayerRef, attachedMapViewRef);
+      setState({ status: 'idle' });
       return;
     }
 
@@ -63,19 +61,24 @@ export function useBackgroundSearch(mapView: JimuMapView | null, config: IMConfi
       return;
     }
 
-    const highlightLayer = getHighlightLayer(mapView, highlightLayerRef, attachedMapViewRef);
+    const highlightLayer = getHighlightLayer(mapView, widgetId, highlightLayerRef, attachedMapViewRef);
     let isCancelled = false;
+    const abortController = new AbortController();
 
     const runSearch = async (): Promise<void> => {
       setState({ status: 'loading' });
 
       try {
-        const featureSet = await query.executeQueryJSON(request.service.layerUrl, {
-          where: request.where,
-          outFields: ['*'],
-          returnGeometry: true,
-          outSpatialReference: view.spatialReference
-        });
+        const featureSet = await query.executeQueryJSON(
+          request.service.layerUrl,
+          {
+            where: request.where,
+            outFields: ['*'],
+            returnGeometry: true,
+            outSpatialReference: view.spatialReference
+          },
+          { signal: abortController.signal }
+        );
 
         if (isCancelled) {
           return;
@@ -124,20 +127,22 @@ export function useBackgroundSearch(mapView: JimuMapView | null, config: IMConfi
 
     return () => {
       isCancelled = true;
+      abortController.abort();
     };
-  }, [config, mapView]);
+  }, [config, mapView, widgetId]);
 
   return state;
 }
 
 function getHighlightLayer(
   mapView: JimuMapView,
+  widgetId: string,
   highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>,
   attachedMapViewRef: React.MutableRefObject<JimuMapView | null>
 ): GraphicsLayer {
   const existingLayer = highlightLayerRef.current;
   const highlightLayer = existingLayer ?? new GraphicsLayer({
-    id: HIGHLIGHT_LAYER_ID,
+    id: `${HIGHLIGHT_LAYER_ID_PREFIX}-${widgetId}`,
     listMode: 'hide'
   });
 
@@ -153,6 +158,21 @@ function getHighlightLayer(
   }
 
   return highlightLayer;
+}
+
+function detachHighlightLayer(
+  highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>,
+  attachedMapViewRef: React.MutableRefObject<JimuMapView | null>
+): void {
+  const highlightLayer = highlightLayerRef.current;
+  const attachedMapView = attachedMapViewRef.current;
+
+  if (highlightLayer && attachedMapView?.view?.map) {
+    attachedMapView.view.map.remove(highlightLayer);
+  }
+
+  highlightLayerRef.current = null;
+  attachedMapViewRef.current = null;
 }
 
 function createHighlightGraphic(geometry: Geometry, color: string): Graphic | null {

@@ -7,7 +7,7 @@ import defaultMessages, { TMessageId } from './translations/default';
 export default function BackgroundSearch(props: AllWidgetProps<IMConfig>): React.ReactElement {
   const { config, useMapWidgetIds } = props;
   const [mapView, setMapView] = React.useState<JimuMapView | null>(null);
-  const searchState = useBackgroundSearch(mapView, config);
+  const searchState = useBackgroundSearch(mapView, config, props.id);
   const messageId = getMessageId(useMapWidgetIds?.[0], searchState.status);
   const message = messageId
     ? props.intl.formatMessage({ id: messageId, defaultMessage: defaultMessages[messageId] })
