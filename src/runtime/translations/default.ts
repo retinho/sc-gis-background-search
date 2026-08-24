@@ -1,10 +1,8 @@
-// src/runtime/translations/default.ts
-export default {
+const messages = {
   _widgetLabel: 'Background Search',
-  
-  // Settings
   mapSectionTitle: 'Map Instance',
   serviceConfigTitle: 'Map Services (Max. 5)',
+  displaySectionTitle: 'Zoom and highlight',
   addService: 'Add Service',
   serviceId: 'URL ID (e.g. parcel)',
   serviceName: 'Display Name',
@@ -12,5 +10,15 @@ export default {
   searchFields: 'Search Fields (comma-separated)',
   zoomLevel: 'Target Scale (1:X)',
   highlightColor: 'Highlight Color (Hex)',
-  maxServicesReached: 'Maximum 5 services allowed.'
-}
+  maxServicesReached: 'Maximum 5 services allowed.',
+  defaultServiceName: 'New service',
+  noMap: 'Please select a map.',
+  loading: 'Searching for a result…',
+  empty: 'No matching result found.',
+  invalidConfig: 'The search service configuration is incomplete or invalid.',
+  error: 'The search could not be completed.'
+} as const;
+
+export type TMessageId = keyof typeof messages;
+
+export default messages;

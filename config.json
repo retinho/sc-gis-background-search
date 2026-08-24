@@ -1,3 +1,5 @@
 {
-  "exampleConfigProperty": "test"
+  "services": [],
+  "zoomLevel": 1000,
+  "highlightColor": "#00FFFF"
 }

@@ -2,43 +2,53 @@ import { React } from 'jimu-core';
 import { AllWidgetSettingProps } from 'jimu-for-builder';
 import { MapWidgetSelector, SettingSection, SettingRow } from 'jimu-ui/advanced/setting-components';
 import { TextInput, Button, NumericInput, Alert } from 'jimu-ui';
-import { IMConfig, IServiceConfig } from '../config';
-import defaultMessages from '../runtime/translations/default';
+import {
+  DEFAULT_HIGHLIGHT_COLOR,
+  DEFAULT_ZOOM_LEVEL,
+  IConfig,
+  IMConfig,
+  IServiceConfig,
+  MAX_SERVICES
+} from '../config';
+import defaultMessages, { TMessageId } from '../runtime/translations/default';
 import { PlusOutlined } from 'jimu-icons/outlined/editor/plus';
 import { TrashOutlined } from 'jimu-icons/outlined/editor/trash';
 
-export default function Setting(props: AllWidgetSettingProps<IMConfig>) {
+export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.ReactElement {
   const { onSettingChange, id, useMapWidgetIds, config, intl } = props;
 
-  const translate = (key: string) => intl.formatMessage({ id: key, defaultMessage: defaultMessages[key] });
+  const translate = (key: TMessageId): string =>
+    intl.formatMessage({ id: key, defaultMessage: defaultMessages[key] });
 
-  // Fallback, falls Array leer ist
-  const services = config.services || [];
+  const services = Array.from(config.services ?? []);
 
-  const updateConfig = (key: keyof IMConfig, value: any) => {
+  const updateConfig = <TKey extends keyof IConfig>(key: TKey, value: IConfig[TKey]): void => {
     onSettingChange({ id, config: config.set(key, value) });
   };
 
-  const addService = () => {
-    if (services.length >= 5) return;
+  const addService = (): void => {
+    if (services.length >= MAX_SERVICES) return;
     const newService: IServiceConfig = {
       id: `svc_${Date.now()}`,
-      name: 'Neuer Dienst',
+      name: translate('defaultServiceName'),
       layerUrl: '',
       searchFields: ''
     };
     updateConfig('services', services.concat([newService]));
   };
 
-  const removeService = (index: number) => {
-    const updated = [...services];
-    updated.splice(index, 1);
-    updateConfig('services', updated);
+  const removeService = (index: number): void => {
+    updateConfig('services', services.filter((_, serviceIndex) => serviceIndex !== index));
   };
 
-  const updateServiceDetail = (index: number, field: keyof IServiceConfig, value: string) => {
-    const updated = [...services];
-    updated[index] = { ...updated[index], [field]: value };
+  const updateServiceDetail = (
+    index: number,
+    field: keyof IServiceConfig,
+    value: string
+  ): void => {
+    const updated = services.map((service, serviceIndex) =>
+      serviceIndex === index ? { ...service, [field]: value } : service
+    );
     updateConfig('services', updated);
   };
 
@@ -54,21 +64,21 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>) {
       </SettingSection>
 
       <SettingSection title={translate('serviceConfigTitle')}>
-        {services.length >= 5 && (
+        {services.length >= MAX_SERVICES && (
           <Alert form="basic" type="warning" className="mb-2">
             {translate('maxServicesReached')}
           </Alert>
         )}
         <SettingRow>
-          <Button type="primary" onClick={addService} disabled={services.length >= 5} className="w-100">
+          <Button type="primary" onClick={addService} disabled={services.length >= MAX_SERVICES} className="w-100">
             <PlusOutlined className="mr-2" /> {translate('addService')}
           </Button>
         </SettingRow>
 
         {services.map((svc, index) => (
-          <div key={index} className="p-2 mb-3 border rounded bg-light">
+          <div key={svc.id || index} className="p-2 mb-3 border rounded bg-light">
             <div className="d-flex justify-content-between align-items-center mb-2">
-              <strong>{svc.name || `Dienst ${index + 1}`}</strong>
+              <strong>{svc.name || `${translate('defaultServiceName')} ${index + 1}`}</strong>
               <Button icon size="sm" type="danger" onClick={() => removeService(index)}>
                 <TrashOutlined />
               </Button>
@@ -101,11 +111,11 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>) {
         ))}
       </SettingSection>
 
-      <SettingSection title="Zoom & Highlight">
+      <SettingSection title={translate('displaySectionTitle')}>
         <SettingRow label={translate('zoomLevel')}>
           <NumericInput
             size="sm"
-            value={config.zoomLevel ?? 1000}
+            value={config.zoomLevel ?? DEFAULT_ZOOM_LEVEL}
             onChange={val => updateConfig('zoomLevel', val)}
             className="w-50"
           />
@@ -113,7 +123,7 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>) {
         <SettingRow label={translate('highlightColor')}>
           <TextInput 
             size="sm"
-            value={config.highlightColor ?? '#00FFFF'}
+            value={config.highlightColor ?? DEFAULT_HIGHLIGHT_COLOR}
             onChange={e => updateConfig('highlightColor', e.target.value)}
             className="w-50"
           />
