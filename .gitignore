@@ -1,0 +1,19 @@
+# macOS and editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Dependencies and local tooling output
+node_modules/
+coverage/
+.cache/
+*.log
+
+# ArcGIS Experience Builder build output
+dist/
+build/
+
+# Environment-specific configuration
+.env
+.env.*
+!.env.example
