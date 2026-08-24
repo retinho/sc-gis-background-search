@@ -71,7 +71,7 @@ export default function Setting(props: AllWidgetSettingProps<IMConfig>): React.R
           <calcite-button
             appearance="outline"
             width="full"
-            disabled={services.length >= MAX_SERVICES}
+            disabled={services.length >= MAX_SERVICES ? true : undefined}
             icon-start="plus"
             onClick={addService}
           >
