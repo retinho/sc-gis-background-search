@@ -15,3 +15,9 @@ Alle wesentlichen Änderungen dieses Widgets werden in dieser Datei dokumentiert
 
 - Strikte TypeScript-Typisierung und in einen Custom Hook ausgelagerte Suchlogik.
 - Sicherer Aufbau der Suchabfrage mit validierter Konfiguration und escaped Suchwerten.
+
+### Security
+
+- HTTPS für Service-Layer-URLs erzwungen.
+- Suchwerte auf 256 Zeichen begrenzt und LIKE-Sonderzeichen `%`, `_` sowie `\` als Literale behandelt.
+- Abfrage auf einen Treffer begrenzt; ungültige Suchwerte lösen keine Service-Abfrage aus.

@@ -39,6 +39,14 @@ https://portal.example.org/experience/?sc_search_id=parzelle&sc_search_val=CH123
 `sc_search_id` muss einer konfigurierten URL-ID entsprechen. `sc_search_val` ist der Suchwert.
 Suchwerte sind auf 256 Zeichen begrenzt; die Zeichen `%` und `_` werden als Text und nicht als Platzhalter behandelt.
 
+## Sicherheit
+
+- Es sind ausschliesslich HTTPS-URLs zu Feature- oder Map-Service-Layern zulässig.
+- Die Service-ID muss einer im Widget konfigurierten Definition entsprechen; URL-Parameter können keinen beliebigen Service ansprechen.
+- Suchfeldnamen werden validiert und Suchwerte für die SQL-LIKE-Abfrage escaped.
+- Pro Suche wird höchstens ein Treffer abgefragt.
+- Bearbeitungsrechte für die Experience und die eingebundenen Kartenservices sind restriktiv zu vergeben. Das Widget darf nur vertrauenswürdige Services verwenden.
+
 ## Entwicklung und Release
 
 - `development`: aktive Entwicklung und Feature-Branches.
