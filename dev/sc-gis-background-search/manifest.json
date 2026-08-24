@@ -1,0 +1,25 @@
+{
+  "name": "sc-gis-background-search",
+  "label": "Background Search",
+  "type": "widget",
+  "version": "1.17.0",
+  "sdkVersion": "1.17.0",
+  "author": "SC-GIS",
+  "description": "Headless Widget: Führt Suchen auf dynamischen MapServices basierend auf URL-Parametern aus.",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {
+    "configurable": true,
+    "hasConfig": true
+  },
+  "settingConfig": {
+    "main": "setting/setting"
+  },
+  "translatedLocales": [
+    "en", "de", "fr"
+  ],
+  "defaultSize": {
+    "width": 250,
+    "height": 100
+  }
+}
