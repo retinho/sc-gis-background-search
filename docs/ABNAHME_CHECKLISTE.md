@@ -23,6 +23,7 @@ Diese Checkliste wird in der Abnahme-Umgebung mit ArcGIS Experience Builder Deve
 | Testfall | URL/Setup | Erwartetes Resultat |
 | --- | --- | --- |
 | Erfolgreicher Treffer | `?sc_search_id=parzelle&sc_search_val=<Wert>` | Ladeindikator, Highlight, Zoom und Standard-Popup des Service erscheinen. |
+| Auswahl aufheben | Popup eines erfolgreichen Treffers schliessen | Die vom Widget erzeugte Markierung wird entfernt; fremde Kartengrafiken bleiben erhalten. |
 | Kein Treffer | Gültiger Dienst, unbekannter Wert | Lokalisierte Meldung; keine Highlight-Grafik bleibt sichtbar. |
 | Fehlende Kartenbindung | Widget ohne Karte | Freundliche Meldung „Bitte Karte wählen“. |
 | Ungültige Konfiguration | Fehlende URL, Feld oder URL-ID | Lokalisierte Konfigurationsmeldung; keine Anfrage wird ausgeführt. |

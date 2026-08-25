@@ -29,6 +29,10 @@ export interface ISearchState {
   status: TSearchStatus;
 }
 
+interface IWatchHandle {
+  remove: () => void;
+}
+
 const HIGHLIGHT_LAYER_ID_PREFIX = 'sc-gis-background-search-highlight';
 
 export function useBackgroundSearch(
@@ -39,10 +43,11 @@ export function useBackgroundSearch(
   const [state, setState] = React.useState<ISearchState>({ status: 'idle' });
   const highlightLayerRef = React.useRef<GraphicsLayer | null>(null);
   const attachedMapViewRef = React.useRef<JimuMapView | null>(null);
+  const popupCloseHandleRef = React.useRef<IWatchHandle | null>(null);
 
   React.useEffect(() => {
     return () => {
-      detachHighlightLayer(highlightLayerRef, attachedMapViewRef);
+      detachHighlightLayer(highlightLayerRef, attachedMapViewRef, popupCloseHandleRef);
     };
   }, []);
 
@@ -50,32 +55,33 @@ export function useBackgroundSearch(
     const view = mapView?.view;
 
     if (!view || typeof window === 'undefined') {
-      detachHighlightLayer(highlightLayerRef, attachedMapViewRef);
+      detachHighlightLayer(highlightLayerRef, attachedMapViewRef, popupCloseHandleRef);
       setState({ status: 'idle' });
       return;
     }
 
     const parameters = getUrlSearchParameters(window.location.search);
     if (!parameters) {
-      highlightLayerRef.current?.removeAll();
+      clearHighlight(highlightLayerRef, popupCloseHandleRef);
       setState({ status: 'idle' });
       return;
     }
 
     if (!isValidSearchValue(parameters.searchValue)) {
-      highlightLayerRef.current?.removeAll();
+      clearHighlight(highlightLayerRef, popupCloseHandleRef);
       setState({ status: 'invalid-search' });
       return;
     }
 
     const request = createSearchRequest(config.services, parameters);
     if (!request) {
-      highlightLayerRef.current?.removeAll();
+      clearHighlight(highlightLayerRef, popupCloseHandleRef);
       setState({ status: 'invalid-config' });
       return;
     }
 
     const highlightLayer = getHighlightLayer(mapView, widgetId, highlightLayerRef, attachedMapViewRef);
+    removePopupCloseHandler(popupCloseHandleRef);
     let isCancelled = false;
     const abortController = new AbortController();
 
@@ -107,14 +113,14 @@ export function useBackgroundSearch(
         const resultFeature = featureSet.features[0];
         const geometry = resultFeature?.geometry;
         if (!geometry) {
-          highlightLayer.removeAll();
+          clearHighlight(highlightLayerRef, popupCloseHandleRef);
           setState({ status: 'empty' });
           return;
         }
 
         const graphic = createHighlightGraphic(geometry, getHighlightColor(config.highlightColor));
         if (!graphic) {
-          highlightLayer.removeAll();
+          clearHighlight(highlightLayerRef, popupCloseHandleRef);
           setState({ status: 'error' });
           return;
         }
@@ -134,7 +140,7 @@ export function useBackgroundSearch(
         }
 
         if (!isCancelled && resultFeature) {
-          openServicePopup(view, resultFeature, searchLayer);
+          openServicePopup(view, resultFeature, searchLayer, highlightLayer, popupCloseHandleRef);
         }
 
         if (!isCancelled) {
@@ -142,7 +148,7 @@ export function useBackgroundSearch(
         }
       } catch {
         if (!isCancelled) {
-          highlightLayer.removeAll();
+          clearHighlight(highlightLayerRef, popupCloseHandleRef);
           setState({ status: 'error' });
         }
       }
@@ -162,10 +168,19 @@ export function useBackgroundSearch(
 function openServicePopup(
   view: JimuMapView['view'],
   feature: Graphic,
-  serviceLayer: FeatureLayer
+  serviceLayer: FeatureLayer,
+  highlightLayer: GraphicsLayer,
+  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
 ): void {
   const popupFeature = feature.clone();
   popupFeature.popupTemplate = serviceLayer.popupTemplate ?? serviceLayer.createPopupTemplate();
+  removePopupCloseHandler(popupCloseHandleRef);
+  popupCloseHandleRef.current = view.popup.watch('visible', (isVisible: boolean) => {
+    if (!isVisible) {
+      highlightLayer.removeAll();
+      removePopupCloseHandler(popupCloseHandleRef);
+    }
+  });
   view.openPopup({ features: [popupFeature] });
 }
 
@@ -197,7 +212,8 @@ function getHighlightLayer(
 
 function detachHighlightLayer(
   highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>,
-  attachedMapViewRef: React.MutableRefObject<JimuMapView | null>
+  attachedMapViewRef: React.MutableRefObject<JimuMapView | null>,
+  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
 ): void {
   const highlightLayer = highlightLayerRef.current;
   const attachedMapView = attachedMapViewRef.current;
@@ -208,6 +224,22 @@ function detachHighlightLayer(
 
   highlightLayerRef.current = null;
   attachedMapViewRef.current = null;
+  removePopupCloseHandler(popupCloseHandleRef);
+}
+
+function clearHighlight(
+  highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>,
+  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
+): void {
+  highlightLayerRef.current?.removeAll();
+  removePopupCloseHandler(popupCloseHandleRef);
+}
+
+function removePopupCloseHandler(
+  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
+): void {
+  popupCloseHandleRef.current?.remove();
+  popupCloseHandleRef.current = null;
 }
 
 function createHighlightGraphic(geometry: Geometry, color: string): Graphic | null {

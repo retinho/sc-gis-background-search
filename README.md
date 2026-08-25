@@ -1,6 +1,6 @@
 # SC GIS Background Search
 
-Ein Custom Widget fuer ArcGIS Experience Builder Developer Edition 1.17. Das Widget liest Suchparameter aus der URL, fragt einen konfigurierten ArcGIS Map Service ab, hebt den ersten gefundenen Treffer in der verbundenen Karte hervor und öffnet dessen Standard-Popup.
+Ein Custom Widget fuer ArcGIS Experience Builder Developer Edition 1.17. Das Widget liest Suchparameter aus der URL, fragt einen konfigurierten ArcGIS Map Service ab, hebt den ersten gefundenen Treffer in der verbundenen Karte hervor und öffnet dessen Standard-Popup. Beim Schliessen des Popups wird die Markierung wieder entfernt.
 
 ## Voraussetzungen
 
