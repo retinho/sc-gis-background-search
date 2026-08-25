@@ -1,4 +1,5 @@
 import Graphic from 'esri/Graphic';
+import * as reactiveUtils from 'esri/core/reactiveUtils';
 import FeatureLayer from 'esri/layers/FeatureLayer';
 import GraphicsLayer from 'esri/layers/GraphicsLayer';
 import SimpleFillSymbol from 'esri/symbols/SimpleFillSymbol';
@@ -187,14 +188,17 @@ function openServicePopup(
   }
 
   let wasVisible = popup.visible;
-  popupCloseHandleRef.current = popup.watch('visible', (isVisible: boolean) => {
-    if (wasVisible && !isVisible) {
-      highlightLayer.removeAll();
-      removePopupCloseHandler(popupCloseHandleRef);
-    }
+  popupCloseHandleRef.current = reactiveUtils.watch(
+    () => popup.visible,
+    (isVisible: boolean) => {
+      if (wasVisible && !isVisible) {
+        highlightLayer.removeAll();
+        removePopupCloseHandler(popupCloseHandleRef);
+      }
 
-    wasVisible = isVisible;
-  });
+      wasVisible = isVisible;
+    }
+  );
 }
 
 function getHighlightLayer(
