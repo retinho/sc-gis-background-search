@@ -1,5 +1,4 @@
 import Graphic from 'esri/Graphic';
-import * as reactiveUtils from 'esri/core/reactiveUtils';
 import FeatureLayer from 'esri/layers/FeatureLayer';
 import GraphicsLayer from 'esri/layers/GraphicsLayer';
 import SimpleFillSymbol from 'esri/symbols/SimpleFillSymbol';
@@ -30,7 +29,7 @@ export interface ISearchState {
   status: TSearchStatus;
 }
 
-interface IWatchHandle {
+interface IRemovableHandle {
   remove: () => void;
 }
 
@@ -44,11 +43,11 @@ export function useBackgroundSearch(
   const [state, setState] = React.useState<ISearchState>({ status: 'idle' });
   const highlightLayerRef = React.useRef<GraphicsLayer | null>(null);
   const attachedMapViewRef = React.useRef<JimuMapView | null>(null);
-  const popupCloseHandleRef = React.useRef<IWatchHandle | null>(null);
+  const selectionClearHandleRef = React.useRef<IRemovableHandle | null>(null);
 
   React.useEffect(() => {
     return () => {
-      detachHighlightLayer(highlightLayerRef, attachedMapViewRef, popupCloseHandleRef);
+      detachHighlightLayer(highlightLayerRef, attachedMapViewRef, selectionClearHandleRef);
     };
   }, []);
 
@@ -56,33 +55,38 @@ export function useBackgroundSearch(
     const view = mapView?.view;
 
     if (!view || typeof window === 'undefined') {
-      detachHighlightLayer(highlightLayerRef, attachedMapViewRef, popupCloseHandleRef);
+      detachHighlightLayer(highlightLayerRef, attachedMapViewRef, selectionClearHandleRef);
       setState({ status: 'idle' });
       return;
     }
 
     const parameters = getUrlSearchParameters(window.location.search);
     if (!parameters) {
-      clearHighlight(highlightLayerRef, popupCloseHandleRef);
+      clearHighlight(highlightLayerRef);
       setState({ status: 'idle' });
       return;
     }
 
     if (!isValidSearchValue(parameters.searchValue)) {
-      clearHighlight(highlightLayerRef, popupCloseHandleRef);
+      clearHighlight(highlightLayerRef);
       setState({ status: 'invalid-search' });
       return;
     }
 
     const request = createSearchRequest(config.services, parameters);
     if (!request) {
-      clearHighlight(highlightLayerRef, popupCloseHandleRef);
+      clearHighlight(highlightLayerRef);
       setState({ status: 'invalid-config' });
       return;
     }
 
     const highlightLayer = getHighlightLayer(mapView, widgetId, highlightLayerRef, attachedMapViewRef);
-    removePopupCloseHandler(popupCloseHandleRef);
+    removeSelectionClearHandler(selectionClearHandleRef);
+    selectionClearHandleRef.current = createSelectionClearHandler(
+      view,
+      highlightLayerRef,
+      selectionClearHandleRef
+    );
     let isCancelled = false;
     const abortController = new AbortController();
 
@@ -114,14 +118,14 @@ export function useBackgroundSearch(
         const resultFeature = featureSet.features[0];
         const geometry = resultFeature?.geometry;
         if (!geometry) {
-          clearHighlight(highlightLayerRef, popupCloseHandleRef);
+          clearHighlight(highlightLayerRef);
           setState({ status: 'empty' });
           return;
         }
 
         const graphic = createHighlightGraphic(geometry, getHighlightColor(config.highlightColor));
         if (!graphic) {
-          clearHighlight(highlightLayerRef, popupCloseHandleRef);
+          clearHighlight(highlightLayerRef);
           setState({ status: 'error' });
           return;
         }
@@ -142,7 +146,7 @@ export function useBackgroundSearch(
 
         if (!isCancelled && resultFeature) {
           try {
-            openServicePopup(view, resultFeature, searchLayer, highlightLayer, popupCloseHandleRef);
+            openServicePopup(view, resultFeature, searchLayer);
           } catch (error) {
             console.warn('BackgroundSearch: The result popup could not be opened.', error);
           }
@@ -153,7 +157,7 @@ export function useBackgroundSearch(
         }
       } catch {
         if (!isCancelled) {
-          clearHighlight(highlightLayerRef, popupCloseHandleRef);
+          clearHighlight(highlightLayerRef);
           setState({ status: 'error' });
         }
       }
@@ -164,6 +168,7 @@ export function useBackgroundSearch(
     return () => {
       isCancelled = true;
       abortController.abort();
+      removeSelectionClearHandler(selectionClearHandleRef);
     };
   }, [config, mapView, widgetId]);
 
@@ -173,32 +178,11 @@ export function useBackgroundSearch(
 function openServicePopup(
   view: JimuMapView['view'],
   feature: Graphic,
-  serviceLayer: FeatureLayer,
-  highlightLayer: GraphicsLayer,
-  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
+  serviceLayer: FeatureLayer
 ): void {
   const popupFeature = feature.clone();
   popupFeature.popupTemplate = serviceLayer.popupTemplate ?? serviceLayer.createPopupTemplate();
-  removePopupCloseHandler(popupCloseHandleRef);
   view.openPopup({ features: [popupFeature] });
-  const popup = view.popup;
-
-  if (!popup) {
-    return;
-  }
-
-  let wasVisible = popup.visible;
-  popupCloseHandleRef.current = reactiveUtils.watch(
-    () => popup.visible,
-    (isVisible: boolean) => {
-      if (wasVisible && !isVisible) {
-        highlightLayer.removeAll();
-        removePopupCloseHandler(popupCloseHandleRef);
-      }
-
-      wasVisible = isVisible;
-    }
-  );
 }
 
 function getHighlightLayer(
@@ -230,7 +214,7 @@ function getHighlightLayer(
 function detachHighlightLayer(
   highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>,
   attachedMapViewRef: React.MutableRefObject<JimuMapView | null>,
-  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
+  selectionClearHandleRef: React.MutableRefObject<IRemovableHandle | null>
 ): void {
   const highlightLayer = highlightLayerRef.current;
   const attachedMapView = attachedMapViewRef.current;
@@ -241,22 +225,61 @@ function detachHighlightLayer(
 
   highlightLayerRef.current = null;
   attachedMapViewRef.current = null;
-  removePopupCloseHandler(popupCloseHandleRef);
+  removeSelectionClearHandler(selectionClearHandleRef);
 }
 
-function clearHighlight(
-  highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>,
-  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
-): void {
+function clearHighlight(highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>): void {
   highlightLayerRef.current?.removeAll();
-  removePopupCloseHandler(popupCloseHandleRef);
 }
 
-function removePopupCloseHandler(
-  popupCloseHandleRef: React.MutableRefObject<IWatchHandle | null>
+function createSelectionClearHandler(
+  view: JimuMapView['view'],
+  highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>,
+  selectionClearHandleRef: React.MutableRefObject<IRemovableHandle | null>
+): IRemovableHandle {
+  const clickHandle = view.on('click', (event) => {
+    void view.hitTest(event)
+      .then((hitTestResult) => {
+        if (hitTestResult.results.length === 0) {
+          clearSelection(view, highlightLayerRef);
+        }
+      })
+      .catch(() => undefined);
+  });
+  const container = view.container instanceof HTMLElement ? view.container : null;
+  const handleKeyDown = (event: KeyboardEvent): void => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      clearSelection(view, highlightLayerRef);
+    }
+  };
+
+  container?.addEventListener('keydown', handleKeyDown);
+
+  return {
+    remove: () => {
+      clickHandle.remove();
+      container?.removeEventListener('keydown', handleKeyDown);
+      if (selectionClearHandleRef.current) {
+        selectionClearHandleRef.current = null;
+      }
+    }
+  };
+}
+
+function clearSelection(
+  view: JimuMapView['view'],
+  highlightLayerRef: React.MutableRefObject<GraphicsLayer | null>
 ): void {
-  popupCloseHandleRef.current?.remove();
-  popupCloseHandleRef.current = null;
+  clearHighlight(highlightLayerRef);
+  view.closePopup();
+}
+
+function removeSelectionClearHandler(
+  selectionClearHandleRef: React.MutableRefObject<IRemovableHandle | null>
+): void {
+  selectionClearHandleRef.current?.remove();
+  selectionClearHandleRef.current = null;
 }
 
 function createHighlightGraphic(geometry: Geometry, color: string): Graphic | null {

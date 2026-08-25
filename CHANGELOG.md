@@ -9,7 +9,7 @@ Alle wesentlichen Änderungen dieses Widgets werden in dieser Datei dokumentiert
 - Calcite-basiertes Setting-UI und lokalisierte Runtime-Statusmeldungen.
 - Eigene Highlight-Layer mit sicherem Lifecycle bei Kartenwechseln und mehreren Widget-Instanzen.
 - Automatisches Öffnen des Standard-Popups des konfigurierten Kartenservice nach einem Treffer.
-- Automatisches Entfernen der eigenen Markierung beim Schliessen des Such-Popups.
+- Aufheben der eigenen Markierung und Schliessen des Such-Popups per Klick auf eine freie Kartenstelle oder `Esc`.
 - Abnahme-Checkliste für Experience Builder 1.17 und ArcGIS Enterprise 11.5.
 
 ### Changed
