@@ -140,7 +140,11 @@ export function useBackgroundSearch(
         }
 
         if (!isCancelled && resultFeature) {
-          openServicePopup(view, resultFeature, searchLayer, highlightLayer, popupCloseHandleRef);
+          try {
+            openServicePopup(view, resultFeature, searchLayer, highlightLayer, popupCloseHandleRef);
+          } catch (error) {
+            console.warn('BackgroundSearch: The result popup could not be opened.', error);
+          }
         }
 
         if (!isCancelled) {
@@ -176,8 +180,14 @@ function openServicePopup(
   popupFeature.popupTemplate = serviceLayer.popupTemplate ?? serviceLayer.createPopupTemplate();
   removePopupCloseHandler(popupCloseHandleRef);
   view.openPopup({ features: [popupFeature] });
-  let wasVisible = view.popup.visible;
-  popupCloseHandleRef.current = view.popup.watch('visible', (isVisible: boolean) => {
+  const popup = view.popup;
+
+  if (!popup) {
+    return;
+  }
+
+  let wasVisible = popup.visible;
+  popupCloseHandleRef.current = popup.watch('visible', (isVisible: boolean) => {
     if (wasVisible && !isVisible) {
       highlightLayer.removeAll();
       removePopupCloseHandler(popupCloseHandleRef);
