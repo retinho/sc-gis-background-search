@@ -175,13 +175,16 @@ function openServicePopup(
   const popupFeature = feature.clone();
   popupFeature.popupTemplate = serviceLayer.popupTemplate ?? serviceLayer.createPopupTemplate();
   removePopupCloseHandler(popupCloseHandleRef);
+  view.openPopup({ features: [popupFeature] });
+  let wasVisible = view.popup.visible;
   popupCloseHandleRef.current = view.popup.watch('visible', (isVisible: boolean) => {
-    if (!isVisible) {
+    if (wasVisible && !isVisible) {
       highlightLayer.removeAll();
       removePopupCloseHandler(popupCloseHandleRef);
     }
+
+    wasVisible = isVisible;
   });
-  view.openPopup({ features: [popupFeature] });
 }
 
 function getHighlightLayer(
